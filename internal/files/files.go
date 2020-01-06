@@ -19,8 +19,15 @@ package files
 
 import "os"
 
+var (
+	osStat     = os.Stat
+	osOpenFile = os.OpenFile
+	osRemove   = os.Remove
+	osCreate   = os.Create
+)
+
 func fileExistsQ(fname string) bool {
-	info, err := os.Stat(fname)
+	info, err := osStat(fname)
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -37,10 +44,10 @@ func EnsureExistsAndOpen(fname string, delete bool) (*os.File, error) {
 	switch {
 	case fExists && !delete:
 		// open to append the file
-		return os.OpenFile(fname, os.O_WRONLY|os.O_APPEND, 0644)
+		return osOpenFile(fname, os.O_WRONLY|os.O_APPEND, 0644)
 	case fExists && delete:
 		// delete the file and then fallthrough to create the file
-		err := os.Remove(fname)
+		err := osRemove(fname)
 		if err != nil {
 			return nil, err
 		}
@@ -48,14 +55,14 @@ func EnsureExistsAndOpen(fname string, delete bool) (*os.File, error) {
 	default:
 		// file doesn't exist or err'd stat'ing file, in which case create will
 		// also fail, but then the user can inspect the Create error for details
-		return os.Create(fname)
+		return osCreate(fname)
 	}
 }
 
 // EnsureFileIsDeleted ensures the file doesn't exist
 func EnsureFileIsDeleted(fname string) error {
 	if fileExistsQ(fname) {
-		return os.Remove(fname)
+		return osRemove(fname)
 	}
 	return nil
 }
